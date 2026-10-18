@@ -1,6 +1,6 @@
 # Every push to main that carries a new version number in package.json becomes a release:
-# GitHub builds the installers on real Windows and Mac machines and publishes them.
-# Installed copies of Focus pick the new version up on their own.
+# GitHub builds the installers on real Windows and Mac machines, then publishes one release
+# with the files attached. Installed copies of Focus pick the new version up on their own.
 # `npm run release` bumps the version, commits and pushes in one go.
 name: Release
 
@@ -14,32 +14,30 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  check:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}
-      new: ${{ steps.create.outputs.new }}
+      new: ${{ steps.exists.outputs.new }}
     steps:
       - uses: actions/checkout@v4
       - id: version
         run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - id: create
+      - id: exists
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           if gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null | grep -qx 'Focus-Setup.exe'; then
-            echo "Release $TAG already has its installer; nothing to build."
+            echo "Release $TAG already has its installer; nothing to do."
             echo "new=false" >> "$GITHUB_OUTPUT"
           else
-            gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-              gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Focus $TAG" --generate-notes
             echo "new=true" >> "$GITHUB_OUTPUT"
           fi
 
   build:
-    needs: release
-    if: needs.release.outputs.new == 'true'
+    needs: check
+    if: needs.check.outputs.new == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -64,17 +62,38 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npx electron-builder --mac --publish never
 
-      - name: List build output
-        shell: bash
-        run: ls -la dist
-
-      - name: Upload to the release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ needs.release.outputs.tag }}
-          fail_on_unmatched_files: false
-          files: |
+          name: dist-${{ runner.os }}
+          if-no-files-found: ignore
+          path: |
             dist/Focus-Setup.exe
             dist/Focus-Setup.exe.blockmap
             dist/latest.yml
             dist/Focus-mac.dmg
+
+  publish:
+    needs: [check, build]
+    # Publish even if only the Mac build failed; Windows is the one that must succeed.
+    if: ${{ !cancelled() && needs.check.outputs.new == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+      - name: Create the release with its files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.check.outputs.tag }}
+        run: |
+          ls -la dist
+          test -f dist/Focus-Setup.exe || { echo "Windows installer missing; not publishing."; exit 1; }
+          # A release left behind without files by an earlier failed run gets replaced.
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          fi
+          gh release create "$TAG" dist/* -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Focus $TAG" --generate-notes
