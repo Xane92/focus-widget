@@ -1,0 +1,90 @@
+{
+  "name": "focus-widget",
+  "productName": "Focus",
+  "version": "1.0.4",
+  "description": "Always-on-top task widget with a focus timer and logs.",
+  "main": "main.js",
+  "author": "Lesley John Jumbo",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/core.test.js",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "release": "npm version patch -m \"Release v%s\" && git push --follow-tags"
+  },
+  "devDependencies": {
+    "@phosphor-icons/web": "^2.1.2",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
+    "geist": "^1.7.2"
+  },
+  "build": {
+    "appId": "com.lesleyjumbo.focus",
+    "productName": "Focus",
+    "copyright": "Lesley John Jumbo",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Focus",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Focus-Setup.exe"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Xane92",
+        "repo": "focus-widget",
+        "releaseType": "release"
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon-512.png",
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "artifactName": "Focus-mac.dmg"
+    },
+    "dmg": {
+      "artifactName": "Focus-mac.dmg"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xane92/focus-widget.git"
+  }
+}

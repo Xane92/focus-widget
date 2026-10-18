@@ -1,0 +1,65 @@
+/* Design tokens. Palette measured from the six references (mist, bone, paper, ink, ember). */
+@font-face { font-family: 'Geist'; src: url('../assets/fonts/Geist-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('../assets/fonts/Geist-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('../assets/fonts/Geist-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('../assets/fonts/Geist-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url('../assets/fonts/GeistMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Geist Mono'; src: url('../assets/fonts/GeistMono-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+
+:root {
+  --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, Consolas, monospace;
+
+  --mist: #DBDCE0;
+  --bone: #E1DFD3;
+  --paper: #F0ECE9;
+  --ember: #F0783A;
+  --ember-deep: #D9622A;
+  --on-media: #FBF8F4;
+
+  --accent: var(--ember);
+
+  --r-shell: 28px;
+  --r-card: 22px;
+  --r-row: 14px;
+  --r-pill: 999px;
+
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+[data-theme="light"] {
+  --ink: #141010;
+  --ink-2: rgba(20, 16, 16, .58);
+  --ink-3: rgba(20, 16, 16, .36);
+  --shell:
+    radial-gradient(90% 50% at 105% 105%, rgba(240, 120, 58, .22) 0%, rgba(240, 120, 58, 0) 72%),
+    radial-gradient(70% 40% at -10% 0%, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #E7E8EB 0%, #DBDCE0 46%, #E1DFD3 100%);
+  --pill-dim: rgba(20, 16, 16, .07);
+  --pill-light: rgba(255, 255, 255, .64);
+  --pill-light-hover: rgba(255, 255, 255, .85);
+  --panel: rgba(255, 255, 255, .44);
+  --panel-line: rgba(20, 16, 16, .055);
+  --row-active: rgba(20, 16, 16, .055);
+  --check-line: rgba(20, 16, 16, .26);
+  --edge: rgba(20, 16, 16, .07);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .75), 0 22px 44px -22px rgba(52, 44, 38, .5);
+}
+
+[data-theme="dark"] {
+  --ink: #EDEAE5;
+  --ink-2: rgba(237, 234, 229, .6);
+  --ink-3: rgba(237, 234, 229, .36);
+  --shell:
+    radial-gradient(90% 50% at 105% 105%, rgba(240, 120, 58, .17) 0%, rgba(240, 120, 58, 0) 72%),
+    linear-gradient(180deg, #1E1D1F 0%, #151415 55%, #110F0F 100%);
+  --pill-dim: rgba(255, 255, 255, .065);
+  --pill-light: rgba(255, 255, 255, .11);
+  --pill-light-hover: rgba(255, 255, 255, .17);
+  --panel: rgba(255, 255, 255, .04);
+  --panel-line: rgba(255, 255, 255, .06);
+  --row-active: rgba(255, 255, 255, .065);
+  --check-line: rgba(237, 234, 229, .3);
+  --edge: rgba(255, 255, 255, .08);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 22px 44px -22px rgba(0, 0, 0, .75);
+}

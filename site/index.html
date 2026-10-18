@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Focus</title>
+  <meta name="description" content="Your next task and a bold timer, on top of every window. Free for Windows and Mac.">
+  <meta property="og:title" content="Focus">
+  <meta property="og:description" content="Your next task and a bold timer, on top of every window.">
+  <meta property="og:image" content="img/widget-light-370.webp">
+  <link rel="icon" href="img/icon.png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <style>
+    @font-face { font-family: 'Geist'; src: url('fonts/Geist-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Geist'; src: url('fonts/Geist-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: 'Geist'; src: url('fonts/Geist-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+    @font-face { font-family: 'Geist Mono'; src: url('fonts/GeistMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+    :root {
+      --ink: #141010; --ink-2: rgba(20, 16, 16, .6); --ink-3: rgba(20, 16, 16, .38);
+      --ember: #F0783A;
+      --bg:
+        radial-gradient(55% 60% at 100% 100%, rgba(240, 120, 58, .22) 0%, rgba(240, 120, 58, 0) 70%),
+        radial-gradient(50% 50% at 0% 0%, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, 0) 70%),
+        linear-gradient(180deg, #E7E8EB 0%, #DBDCE0 50%, #E1DFD3 100%);
+      --pill: rgba(20, 16, 16, .07);
+      --btn: #141010; --btn-text: #FBF8F4;
+      --card: rgba(255, 255, 255, .5); --line: rgba(20, 16, 16, .07);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --ink: #EDEAE5; --ink-2: rgba(237, 234, 229, .62); --ink-3: rgba(237, 234, 229, .38);
+        --bg:
+          radial-gradient(55% 60% at 100% 100%, rgba(240, 120, 58, .16) 0%, rgba(240, 120, 58, 0) 70%),
+          linear-gradient(180deg, #1E1D1F 0%, #151415 55%, #110F0F 100%);
+        --pill: rgba(255, 255, 255, .07);
+        --btn: #EDEAE5; --btn-text: #141010;
+        --card: rgba(255, 255, 255, .04); --line: rgba(255, 255, 255, .07);
+      }
+      .shot--light { display: none; }
+      .shot--dark { display: block !important; }
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html { background: #DBDCE0; }
+    body {
+      min-height: 100dvh;
+      font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column;
+    }
+    a { color: inherit; }
+
+    .wrap { width: min(1080px, 100% - 32px); margin: 0 auto; }
+    header { padding: 22px 0; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.02em; font-size: 17px; text-decoration: none; }
+    .brand img { width: 28px; height: 28px; border-radius: 8px; }
+
+    .hero {
+      flex: 1;
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center; gap: 48px;
+      padding: 32px 0 64px;
+    }
+    h1 { font-size: clamp(42px, 6vw, 72px); font-weight: 600; letter-spacing: -.055em; line-height: .98; }
+    .lede { margin-top: 20px; max-width: 30ch; font-size: 18px; line-height: 1.45; color: var(--ink-2); }
+    .ctas { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      height: 52px; padding: 0 24px; border-radius: 999px;
+      font-size: 15.5px; font-weight: 500; letter-spacing: -.01em; text-decoration: none; white-space: nowrap;
+      transition: transform .15s cubic-bezier(.16, 1, .3, 1), opacity .2s, background .2s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn--primary { background: var(--btn); color: var(--btn-text); }
+    .btn--primary:hover { opacity: .9; }
+    .btn--soft { background: var(--pill); }
+    .btn--soft:hover { background: var(--card); }
+    .btn svg { width: 18px; height: 18px; }
+    .meta { margin-top: 14px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: var(--ink-3); }
+
+    .help {
+      display: none;
+      margin-top: 22px; max-width: 46ch; padding: 16px 18px;
+      border-radius: 18px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line);
+      font-size: 14px; line-height: 1.55; color: var(--ink-2);
+    }
+    .help.is-on { display: block; }
+    .help b { color: var(--ink); font-weight: 500; }
+
+    .stage { position: relative; display: flex; justify-content: center; }
+    .stage .main { width: min(370px, 80%); height: auto; filter: drop-shadow(0 40px 50px rgba(40, 32, 28, .28)); }
+    .stage .mini {
+      position: absolute; left: -2%; bottom: 8%;
+      width: min(300px, 62%); height: auto;
+      filter: drop-shadow(0 24px 30px rgba(20, 16, 16, .35));
+    }
+    .shot--dark { display: none; }
+
+    .points { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-radius: 22px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); margin-bottom: 40px; }
+    .point { padding: 22px 24px; }
+    .point + .point { box-shadow: inset 1px 0 0 var(--line); }
+    .point b { display: block; font-weight: 500; letter-spacing: -.01em; margin-bottom: 6px; }
+    .point span { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+
+    footer { padding: 0 0 28px; font-size: 13px; color: var(--ink-3); }
+
+    @media (max-width: 820px) {
+      .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 8px; }
+      .stage { order: -1; }
+      .stage .main { width: min(300px, 72%); }
+      .stage .mini { width: min(240px, 60%); left: 0; }
+      .points { grid-template-columns: 1fr; }
+      .point + .point { box-shadow: inset 0 1px 0 var(--line); }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="wrap"><a class="brand" href="./"><img src="img/icon.png" alt="">Focus</a></header>
+
+  <main class="wrap hero">
+    <div>
+      <h1>Your next task, on every screen.</h1>
+      <p class="lede">A small widget that floats above every window with your tasks and one bold timer. Stop checking your phone to know what is next.</p>
+      <div class="ctas">
+        <a class="btn btn--primary" id="primary" href="https://github.com/Xane92/focus-widget/releases/latest/download/Focus-Setup.exe" data-os="win">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+          <span>Download for Windows</span>
+        </a>
+        <a class="btn btn--soft" id="secondary" href="https://github.com/Xane92/focus-widget/releases/latest/download/Focus-mac.dmg" data-os="mac">Mac</a>
+      </div>
+      <p class="meta">Free. About 110 MB. Updates install on their own.</p>
+
+      <div class="help" id="help-win">
+        <b>One more click on Windows.</b> Open the file you just downloaded. If Windows says "Windows protected your PC", click <b>More info</b>, then <b>Run anyway</b>. Focus installs in seconds and appears in the top-right corner of your screen.
+      </div>
+      <div class="help" id="help-mac">
+        <b>One more step on Mac.</b> Open the file and drag Focus into Applications. The first time you open it, macOS may block it. Go to <b>System Settings, Privacy &amp; Security</b> and click <b>Open Anyway</b>.
+      </div>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <img class="main shot--light" src="img/widget-light-370.webp" width="740" height="1200" alt="">
+      <img class="main shot--dark" src="img/widget-dark-370.webp" width="740" height="1200" alt="">
+      <img class="mini" src="img/widget-dark-300.webp" width="600" height="152" alt="">
+    </div>
+  </main>
+
+  <section class="wrap points">
+    <div class="point"><b>Always in view</b><span>Stays on top of your browser, your editor and your calls. Drag it, resize it, or tuck it into the screen edge.</span></div>
+    <div class="point"><b>One timer, real times</b><span>Start, pause and tick tasks off. Every session is logged with the clock time it happened.</span></div>
+    <div class="point"><b>Yours to style</b><span>Your own photo, gradients, button colours, light or dark. Your data stays on your computer.</span></div>
+  </section>
+
+  <footer class="wrap">Made by Lesley John Jumbo.</footer>
+
+  <script>
+    (function () {
+      var isMac = /Mac/i.test(navigator.platform || navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent);
+      var primary = document.getElementById('primary');
+      var secondary = document.getElementById('secondary');
+      if (isMac) {
+        var winHref = primary.href;
+        primary.href = secondary.href; primary.dataset.os = 'mac';
+        primary.querySelector('span').textContent = 'Download for Mac';
+        secondary.href = winHref; secondary.dataset.os = 'win'; secondary.textContent = 'Windows';
+      }
+      [primary, secondary].forEach(function (a) {
+        a.addEventListener('click', function () {
+          document.getElementById('help-win').classList.toggle('is-on', a.dataset.os === 'win');
+          document.getElementById('help-mac').classList.toggle('is-on', a.dataset.os === 'mac');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

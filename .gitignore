@@ -1,0 +1,5 @@
+node_modules/
+dist/
+selftest-out/
+*.log
+.DS_Store
