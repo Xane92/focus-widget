@@ -11,7 +11,7 @@
     "start": "electron .",
     "test": "node test/core.test.js",
     "dist": "electron-builder --win nsis --x64 --publish never",
-    "release": "npm version patch -m \"Release v%s\" && git push --follow-tags"
+    "release": "npm version patch --no-git-tag-version && git commit -am \"Release\" && git push"
   },
   "devDependencies": {
     "@phosphor-icons/web": "^2.1.2",

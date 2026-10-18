@@ -25,4 +25,4 @@ FOCUS_SELFTEST=1 FOCUS_USER_DATA=/tmp/focus-test xvfb-run -a npx electron . --no
 ```bash
 npm run release
 ```
-That bumps the patch version, commits, tags and pushes. GitHub Actions builds the Windows and Mac installers and publishes a Release. Installed copies download it on their own and offer "Restart to update" in the tray and Studio.
+That bumps the patch version, commits and pushes. A push that changes the version in package.json is what triggers a release. GitHub Actions builds the Windows and Mac installers and publishes a Release. Installed copies download it on their own and offer "Restart to update" in the tray and Studio.

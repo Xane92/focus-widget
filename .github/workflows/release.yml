@@ -1,11 +1,13 @@
-# Push a tag like v1.0.5 (npm run release does it for you) and this builds the
-# installers on real Windows and Mac machines, then publishes them as a GitHub Release.
+# Every push to main that carries a new version number in package.json becomes a release:
+# GitHub builds the installers on real Windows and Mac machines and publishes them.
 # Installed copies of Focus pick the new version up on their own.
+# `npm run release` bumps the version, commits and pushes in one go.
 name: Release
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['package.json', '.github/workflows/release.yml']
   workflow_dispatch:
 
 permissions:
@@ -14,14 +16,29 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      new: ${{ steps.create.outputs.new }}
     steps:
-      - name: Create the release
+      - uses: actions/checkout@v4
+      - id: version
+        run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: create
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --title "Focus $GITHUB_REF_NAME" --generate-notes
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; nothing to build."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          else
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Focus $TAG" --generate-notes
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
     needs: release
+    if: needs.release.outputs.new == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +67,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release.outputs.tag }}
         run: |
           shopt -s nullglob
           files=(dist/Focus-Setup.exe dist/Focus-Setup.exe.blockmap dist/latest.yml dist/Focus-mac.dmg)
-          gh release upload "$GITHUB_REF_NAME" "${files[@]}" -R "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$TAG" "${files[@]}" -R "$GITHUB_REPOSITORY" --clobber
