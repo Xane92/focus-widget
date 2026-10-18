@@ -28,11 +28,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; nothing to build."
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null | grep -qx 'Focus-Setup.exe'; then
+            echo "Release $TAG already has its installer; nothing to build."
             echo "new=false" >> "$GITHUB_OUTPUT"
           else
-            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Focus $TAG" --generate-notes
+            gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+              gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Focus $TAG" --generate-notes
             echo "new=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -63,12 +64,17 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npx electron-builder --mac --publish never
 
-      - name: Upload to the release
+      - name: List build output
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.release.outputs.tag }}
-        run: |
-          shopt -s nullglob
-          files=(dist/Focus-Setup.exe dist/Focus-Setup.exe.blockmap dist/latest.yml dist/Focus-mac.dmg)
-          gh release upload "$TAG" "${files[@]}" -R "$GITHUB_REPOSITORY" --clobber
+        run: ls -la dist
+
+      - name: Upload to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          fail_on_unmatched_files: false
+          files: |
+            dist/Focus-Setup.exe
+            dist/Focus-Setup.exe.blockmap
+            dist/latest.yml
+            dist/Focus-mac.dmg
