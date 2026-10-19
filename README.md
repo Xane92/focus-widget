@@ -28,7 +28,7 @@ Everything is in `%APPDATA%\Focus\focus-data.json` (Studio > Settings > Open fol
 
 ## Download
 
-https://xane92.github.io/focus-widget (or straight from the latest release: `Focus-Setup.exe` for Windows, `Focus-mac.dmg` for Mac).
+https://lesleyjohnjumbo.com/focus (or straight from the latest release: `Focus-Setup.exe` for Windows, `Focus-mac.dmg` for Mac).
 
 ## Ship an update
 

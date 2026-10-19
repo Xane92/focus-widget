@@ -8,7 +8,7 @@ Always-on-top task widget for Windows and Mac. Electron, plain HTML/CSS/JS, no f
 - `src/shared/core.js`: pure task/timer reducer, shared by main and both pages. All state changes go through `apply()`.
 - `src/widget/`: the on-screen widget (full card, mini, edge tab).
 - `src/studio/`: the Studio window (tasks, appearance, logs, settings).
-- `site/`: the public download page (GitHub Pages).
+- Download page: lives in the portfolio repo (Xane92/portfolio, folder `focus/`), served at https://lesleyjohnjumbo.com/focus
 
 ## Rules
 - No `-webkit-app-region: drag` anywhere in the widget. Windows swallows clicks inside drag regions; the app moves the window itself (`move:start/move/end` IPC).
