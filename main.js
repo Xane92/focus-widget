@@ -11,13 +11,13 @@ const Core = require('./src/shared/core.js');
 if (process.env.FOCUS_USER_DATA) app.setPath('userData', process.env.FOCUS_USER_DATA);
 const SELFTEST = !!process.env.FOCUS_SELFTEST;
 
-const FULL = { w: 370, h: 600 };
-const MIN = { w: 170, h: 110 };
+const FULL = { w: 378, h: 608 }; // window sizes include the 14px transparent margin on each side
+const MIN = { w: 178, h: 118 };
 const TAB = { w: 26, h: 76 }; // the pull-out tab when tucked into a screen edge
-const MAX = { w: 680, h: 1200 };
-const MINI = { w: 300, h: 76 };
-const MINI_MIN = { w: 150, h: 54 };
-const MINI_MAX = { w: 560, h: 130 };
+const MAX = { w: 688, h: 1208 };
+const MINI = { w: 308, h: 84 };
+const MINI_MIN = { w: 158, h: 62 };
+const MINI_MAX = { w: 568, h: 138 };
 const MARGIN = 24;
 const ASSETS = path.join(__dirname, 'src', 'assets');
 const ICON = path.join(ASSETS, 'icon.png');

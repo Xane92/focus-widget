@@ -33,7 +33,7 @@ module.exports = async function selftest(ctx) {
     ok('no Windows drag regions anywhere in the widget', await js(w, `[...document.querySelectorAll('*')].every((el) => getComputedStyle(el).webkitAppRegion !== 'drag')`));
     {
       // Real mouse click (not a script click) on the play button starts and stops the timer
-      const r = await js(w, `(() => { const b = document.querySelector('.hero .ctl').getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })()`);
+      const r = await js(w, `(() => { const b = document.querySelector('.hero [data-act=timer]').getBoundingClientRect(); return { x: Math.round(b.left + b.width / 2), y: Math.round(b.top + b.height / 2) }; })()`);
       const press = (cc) => { w.webContents.sendInputEvent({ type: 'mouseDown', x: r.x, y: r.y, button: 'left', clickCount: cc }); w.webContents.sendInputEvent({ type: 'mouseUp', x: r.x, y: r.y, button: 'left', clickCount: cc }); };
       w.webContents.sendInputEvent({ type: 'mouseMove', x: r.x, y: r.y });
       await js(w, `window.__renders = 0; new MutationObserver(() => window.__renders++).observe(document.getElementById('app'), { childList: true });`);
@@ -46,6 +46,22 @@ module.exports = async function selftest(ctx) {
       await wait(200);
       ok('a real mouse click on play starts the timer and it counts', startedByMouse && faceAfter !== '00:00', faceAfter);
       ok('a second click pauses it', !S().running);
+      // Hovering play floats the reset button out; a real click on it zeroes the timer
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: r.x, y: r.y });
+      await wait(450);
+      const rr = await js(w, `(() => { const b = document.querySelector('[data-act=reset]'); const q = b.getBoundingClientRect(); return { o: getComputedStyle(b).opacity, x: Math.round(q.left + q.width / 2), y: Math.round(q.top + q.height / 2) }; })()`);
+      ok('hovering play reveals reset beside it', rr.o === '1' && rr.x < r.x, rr);
+      await shot(w, '07-reset-hover');
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: rr.x, y: rr.y });
+      await wait(150);
+      w.webContents.sendInputEvent({ type: 'mouseDown', x: rr.x, y: rr.y, button: 'left', clickCount: 1 });
+      w.webContents.sendInputEvent({ type: 'mouseUp', x: rr.x, y: rr.y, button: 'left', clickCount: 1 });
+      await wait(250);
+      const act0 = S().tasks.find((t) => t.id === S().activeId);
+      ok('a real click on the floating reset zeroes the timer', act0 && act0.elapsedMs === 0 && S().log.at(-1).type === 'reset', act0 && act0.elapsedMs);
+      w.webContents.sendInputEvent({ type: 'mouseMove', x: 5, y: 5 });
+      await wait(400);
+      ok('reset hides again when the cursor leaves', await js(w, `getComputedStyle(document.querySelector('[data-act=reset]')).opacity === '0'`));
       // Pressing on the card (not a control) starts an app-driven move of the full widget
       await js(w, `(() => { const h = document.querySelector('.hero__task'); const b = h.getBoundingClientRect(); h.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 9, screenX: 50, screenY: 50, clientX: b.left + 2, clientY: b.top + 2 })); })()`);
       await wait(100);
@@ -56,7 +72,7 @@ module.exports = async function selftest(ctx) {
       ctx.dispatch({ type: 'timer/reset' });
       await wait(100);
     }
-    ok('top bar with progress, clock and Studio arrow; no reset button', await js(w, `!!document.querySelector('.bar .progress') && !!document.querySelector('.bar [data-act=studio]') && !document.querySelector('[data-act=reset]')`));
+    ok('top bar with progress, clock and Studio arrow; reset hidden until hover', await js(w, `!!document.querySelector('.bar .progress') && !!document.querySelector('.bar [data-act=studio]') && getComputedStyle(document.querySelector('[data-act=reset]')).opacity === '0'`));
     await shot(w, '01-widget-first-launch');
 
     // Add a task inline on the widget
@@ -129,13 +145,13 @@ module.exports = async function selftest(ctx) {
     ok('resize respects the minimum size', b2.width === ctx.MIN.w && b2.height === ctx.MIN.h, b2);
     const cardOnly = await js(w, `getComputedStyle(document.querySelector('.list')).display === 'none' && document.querySelector('.hero').getBoundingClientRect().height > 40`);
     ok('at the smallest size the card fills the window', cardOnly);
-    const sizes = await js(w, `({ timer: parseFloat(getComputedStyle(document.querySelector('.timer')).fontSize), btn: document.querySelector('.ctl').getBoundingClientRect().width })`);
+    const sizes = await js(w, `({ timer: parseFloat(getComputedStyle(document.querySelector('.timer')).fontSize), btn: document.querySelector('[data-act=timer]').getBoundingClientRect().width })`);
     ok('timer and play button scale down', sizes.timer < 45 && sizes.btn < 45, sizes);
     const bar = await js(w, `({ h: document.querySelector('.bar').getBoundingClientRect().height, font: parseFloat(getComputedStyle(document.querySelector('.pill--dim')).fontSize), arrow: document.querySelector('.pill--light').getBoundingClientRect().width })`);
     ok('top bar shrinks with the window', bar.h <= 32 && bar.font <= 12 && bar.arrow <= 42, bar);
-    const fits = await js(w, `(() => { const h = document.querySelector('.hero').getBoundingClientRect(); const t = document.querySelector('.timer').getBoundingClientRect(); const b = document.querySelector('.hero .ctl').getBoundingClientRect(); return t.bottom <= h.bottom && b.bottom <= h.bottom && t.right <= b.left; })()`);
+    const fits = await js(w, `(() => { const h = document.querySelector('.hero').getBoundingClientRect(); const t = document.querySelector('.timer').getBoundingClientRect(); const b = document.querySelector('.hero [data-act=timer]').getBoundingClientRect(); return t.bottom <= h.bottom && b.bottom <= h.bottom && t.right <= b.left; })()`);
     ok('at the smallest size nothing overflows the card', fits);
-    ok('at the smallest size the task title hides; bar, timer and play stay', await js(w, `getComputedStyle(document.querySelector('.hero__task')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display !== 'none' && !!document.querySelector('.hero .ctl')`));
+    ok('at the smallest size the task title hides; bar, timer and play stay', await js(w, `getComputedStyle(document.querySelector('.hero__task')).display === 'none' && getComputedStyle(document.querySelector('.bar')).display !== 'none' && !!document.querySelector('.hero [data-act=timer]')`));
     ctx.resizeTo(220, 220);
     await wait(250);
     ok('a bit bigger and the task title is back', await js(w, `getComputedStyle(document.querySelector('.hero__task')).display !== 'none'`));
@@ -200,12 +216,12 @@ module.exports = async function selftest(ctx) {
       ctx.dispatch({ type: 'settings/set', payload: { key: 'photo', value: process.env.FOCUS_TEST_PHOTO } });
       ctx.dispatch({ type: 'timer/start' });
       await wait(1200);
-      const gallery = [['20-full', 370, 600], ['21-small', 250, 330], ['22-card', 240, 170], ['23-tiny', 200, 150], ['23b-tiniest', 170, 110]];
+      const gallery = [['20-full', 378, 608], ['21-small', 250, 330], ['22-card', 240, 170], ['23-tiny', 200, 150], ['23b-tiniest', 178, 118]];
       for (const [name, gw, gh] of gallery) { ctx.resizeTo(gw, gh); await wait(450); await shot(w, name); }
       ctx.resizeTo(b0.width, b0.height);
       ctx.dispatch({ type: 'settings/set', payload: { key: 'compact', value: true } });
       await wait(400);
-      for (const [name, gw, gh] of [['24-mini', 300, 76], ['25-mini-min', 150, 54], ['26-mini-wide', 420, 110]]) { ctx.resizeTo(gw, gh); await wait(450); await shot(w, name); }
+      for (const [name, gw, gh] of [['24-mini', 308, 84], ['25-mini-min', 158, 62], ['26-mini-wide', 420, 110]]) { ctx.resizeTo(gw, gh); await wait(450); await shot(w, name); }
       ctx.resizeTo(ms.width, ms.height);
       await wait(200);
       ctx.dispatch({ type: 'settings/set', payload: { key: 'compact', value: false } });
@@ -266,7 +282,7 @@ module.exports = async function selftest(ctx) {
     ctx.dispatch({ type: 'timer/stop' });
     ctx.dispatch({ type: 'settings/set', payload: { key: 'btnIdle', value: '#3E63DD' } });
     await wait(600);
-    const col = await js(w, `({ bg: getComputedStyle(document.querySelector('.ctl')).backgroundColor, fg: getComputedStyle(document.querySelector('.ctl')).color })`);
+    const col = await js(w, `({ bg: getComputedStyle(document.querySelector('[data-act=timer]')).backgroundColor, fg: getComputedStyle(document.querySelector('[data-act=timer]')).color })`);
     ok('custom paused colour reaches the widget with a readable icon', col.bg === 'rgb(62, 99, 221)' && col.fg === 'rgb(251, 248, 244)', col);
     await shot(w, '06-custom-colour');
     ctx.dispatch({ type: 'settings/set', payload: { key: 'btnIdle', value: null } });

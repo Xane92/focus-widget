@@ -28,9 +28,14 @@ window.__errors = []; window.addEventListener('error', (e) => window.__errors.pu
     return `url("${url.replace(/"/g, '%22')}")`;
   }
   const isLive = (a) => !!(a && S.running && S.running.taskId === a.id);
+  // Play button with a reset button that floats out to its left on hover (only when there is time to reset).
   const playBtn = (a) => {
     const live = isLive(a);
-    return `<button class="ctl ${live ? 'is-running' : ''}" data-act="timer" aria-label="${live ? 'Pause' : 'Start'}" ${a ? '' : 'disabled'}><i class="ph-fill ${live ? 'ph-pause' : 'ph-play'}"></i></button>`;
+    const canReset = !!(a && (a.elapsedMs > 0 || live));
+    return `<div class="playwrap ${canReset ? 'can-reset' : ''}">
+      <button class="ctl ctl--reset" data-act="reset" aria-label="Reset timer" title="Reset timer" ${canReset ? '' : 'disabled'}><i class="ph-bold ph-arrow-counter-clockwise"></i></button>
+      <button class="ctl ${live ? 'is-running' : ''}" data-act="timer" aria-label="${live ? 'Pause' : 'Start'}" ${a ? '' : 'disabled'}><i class="ph-fill ${live ? 'ph-pause' : 'ph-play'}"></i></button>
+    </div>`;
   };
   const media = (prefix) => `<div class="${prefix}__media" data-media></div><div class="${prefix}__tint" data-tint></div><div class="${prefix}__shade"></div>`;
 
@@ -222,6 +227,7 @@ window.__errors = []; window.addEventListener('error', (e) => window.__errors.pu
       case 'studio': if (api.openStudio) api.openStudio(); break;
       case 'undock': if (api.undock) api.undock(); break;
       case 'timer': if (e.detail === 0) send('timer/toggle'); break; // keyboard; mouse and touch go through pointerup below
+      case 'reset': send('timer/reset'); break;
       case 'toggle': send('task/toggle', { id }); break;
       case 'activate': send('task/activate', { id }); break;
       case 'open': send('task/open', { id }); break;
