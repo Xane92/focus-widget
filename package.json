@@ -1,7 +1,7 @@
 {
   "name": "focus-widget",
   "productName": "Focus",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Always-on-top task widget with a focus timer and logs.",
   "main": "main.js",
   "author": "Lesley John Jumbo",
